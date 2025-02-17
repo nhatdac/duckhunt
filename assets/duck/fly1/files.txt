@@ -1,0 +1,4 @@
+duckleft1.png
+duckleft2.png
+duckleft3.png
+duckleft4.png
