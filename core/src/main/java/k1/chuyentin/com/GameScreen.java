@@ -18,17 +18,16 @@ import com.badlogic.gdx.utils.ScreenUtils;
 public class GameScreen implements Screen {
     Master game;
     Texture crossHairImage;
-    Texture crossHairImageAnimation;
     CrossHair crossHair;
-    Round round;
-    BaseActor shot;
+    Texture roundImage;
+    Shot shot;
     BaseActor hitCounter;
     BaseActor scoreCounter;
 
     OrthographicCamera camera;
 
-    Texture backgroundImage;
     GlyphLayout layout;
+    int round = 0;
     int score;
 
     Stage stage;
@@ -37,14 +36,16 @@ public class GameScreen implements Screen {
     Music sungAudio;
     boolean isTouchedLastFrame = false; // Cờ lưu trạng thái chuột ở khung trước
     float mouseSpeed = 0;
-    int shooting = 0;
+    boolean isShooting = false;
 
     Duck duck;
     Dog dog;
     BaseActor ground;
 
-    Sound caughtDuckAudio;
+    Music caughtDuckAudio;
     Sound dogCryAudio;
+
+    int duckShotX = 333;
 
     public GameScreen(Master game){
         this.game = game;
@@ -52,34 +53,34 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false, Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
         game.batch = new SpriteBatch();
         layout = new GlyphLayout();
-        layout.setText(game.font," " + score + " ");
-        backgroundImage = new Texture("background.png");
+        layout.setText(game.font,"" + score);
         crossHairImage = new Texture("crosshair.png");
-        crossHairImageAnimation = new Texture("explosion.png");
-        sungAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/shoot.wav"));
 
         stage = new Stage();
-        background = new Background(backgroundImage, 0,0);
-        ground = new BaseActor(new Texture("ground.png"), 0, -90);
+        background = new Background(new Texture("background.png"), 0,0);
+        ground = new BaseActor(new Texture("ground.png"), 0, -32);
         crossHair = new CrossHair(crossHairImage, 0, 0, 1, 1, 0.02f);
 
-        duck = new Duck(new Texture("duck/duckshot.png"), 0, 0);
         dog = new Dog(new Texture("dog/dogcaughtduck.png"), 0, 0);
-        round = new Round(new Texture("round.png"), 0, Gdx.graphics.getHeight() - 64);
-        shot = new Shot(new Texture("shot.png"), 0, 0, 4, 1, 0.1f);
-        hitCounter = new BaseActor(new Texture("hitcounter.png"), 200, 0);
-        scoreCounter = new BaseActor(new Texture("scorecounter.png"), Gdx.graphics.getWidth() - 150, 0);
-        scoreCounter.setSize(128, 80);
+        roundImage = new Texture("round.png");
+        shot = new Shot(new Texture("shot.png"), 16, 0);
+        hitCounter = new BaseActor(new Texture("hitcounter.png"), 0, 0);
+        hitCounter.setSize(512+128, 86);
+        hitCounter.setPosition(Gdx.graphics.getWidth()/2 - hitCounter.getWidth()/2, 0);
+
+        scoreCounter = new BaseActor(new Texture("scorecounter.png"), 0, 0);
+        scoreCounter.setSize(128, 86);
+        scoreCounter.setPosition(Gdx.graphics.getWidth() - scoreCounter.getWidth() - 16, 0);
 
         stage.addActor(background);
-        stage.addActor(duck);
         stage.addActor(dog);
         stage.addActor(ground);
         stage.addActor(crossHair);
-        stage.addActor(round);
         stage.addActor(shot);
         stage.addActor(hitCounter);
         stage.addActor(scoreCounter);
+
+        duck = new Duck(new Texture("duck/duckshot.png"), 0, 0, stage);
 
         stage.addListener(new InputListener(){
             @Override
@@ -89,13 +90,23 @@ public class GameScreen implements Screen {
             }
         });
 
-        caughtDuckAudio = Gdx.audio.newSound(Gdx.files.internal("audio/caughtDuck.wav"));
+        caughtDuckAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/caughtDuck.wav"));
         dogCryAudio = Gdx.audio.newSound(Gdx.files.internal("audio/dogcry.wav"));
+        sungAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/shoot.wav"));
 
         sungAudio.setOnCompletionListener(new Music.OnCompletionListener() {
             @Override
             public void onCompletion(Music music) {
                 crossHair.setCostumes(crossHairImage, 1, 1, 0.002f);
+                isShooting = false;
+            }
+        });
+
+        caughtDuckAudio.setOnCompletionListener(new Music.OnCompletionListener() {
+            @Override
+            public void onCompletion(Music music) {
+                dog.addAction(Actions.moveBy(0, -250, 1));
+                duck = new Duck(new Texture("duck/duckshot.png"), 0, 0, stage);
             }
         });
     }
@@ -104,6 +115,8 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
         // ẩn hình con trỏ chuột
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.None);
+        round = 1;
+        score = 0;
 
     }
     @Override
@@ -111,10 +124,6 @@ public class GameScreen implements Screen {
         ScreenUtils.clear(Color.BLACK);
         camera.update();
         game.batch.setProjectionMatrix(camera.combined);
-
-        game.batch.begin();
-        game.batch.draw(game.image, 0,0);
-        game.batch.end();
 
         float mouseX = Gdx.input.getX();
         float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
@@ -136,14 +145,20 @@ public class GameScreen implements Screen {
         if(!duck.isAlive() && duck.getY() < 0 && dog.getY() == 0){
             caughtDuckAudio.play();
             dog.setX(duck.getX(), 0);
-            dog.addAction(Actions.moveBy(0, 150, 1));
+            dog.addAction(Actions.moveBy(0, 250, 1));
+
+            HitDuckCounter duckCounter = new HitDuckCounter(new Texture("duck.png"), duckShotX, 42);
+            duckShotX += 32;
+            stage.addActor(duckCounter);
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            if (!isTouchedLastFrame && shooting < 1) { // Chỉ xử lý khi phát hiện nhấp mới
+            if (!isTouchedLastFrame && !isShooting && shot.bullets > 0) { // Chỉ xử lý khi phát hiện nhấp mới
+                isShooting = true;
                 sungAudio.play(); // Phát âm thanh hoặc xử lý logic
                 isTouchedLastFrame = true; // Đánh dấu đã xử lý lần nhấp này
-                crossHair.setCostumes(crossHairImageAnimation, 8, 1, Gdx.graphics.getDeltaTime());
+                crossHair.setCostumes(new Texture("explosion.png"), 8, 1, Gdx.graphics.getDeltaTime());
+                shot.bullets--;
                 if(duck.getBounds().contains(crossHair.getX() + crossHair.getWidth()/2, crossHair.getY() + crossHair.getHeight()/2)){
                     duck.justShot();
                 }
@@ -158,6 +173,13 @@ public class GameScreen implements Screen {
         } else {
             isTouchedLastFrame = false; // phím đã thả, sẵn sàng cho lần nhấp mới
         }
+
+        game.batch.begin();
+        game.batch.draw(roundImage, 0, Gdx.graphics.getHeight() - roundImage.getHeight());
+        game.font.draw(game.batch, "" + round, 220, Gdx.graphics.getHeight() - 20);
+        layout.setText(game.font, "" + score);
+        game.font.draw(game.batch, layout, Gdx.graphics.getWidth() - 16 - scoreCounter.getWidth()/2 - layout.width/2, 70);
+        game.batch.end();
 
     }
     @Override

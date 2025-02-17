@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 
 import java.util.Random;
 
@@ -40,7 +41,7 @@ public class Duck extends BaseActor{
     // Trạng thái bay trước đó
     boolean wasGoingUp = true;
 
-    public Duck(Texture texture, float x, float y) {
+    public Duck(Texture texture, float x, float y, Stage s) {
         super(texture, x, y);
         stateTime = 0f;
 
@@ -56,6 +57,8 @@ public class Duck extends BaseActor{
         animationType = TILTED;
         setAnimation(animationType);
         setSize(64, 64);
+
+        s.addActor(this);
     }
 
     @Override
