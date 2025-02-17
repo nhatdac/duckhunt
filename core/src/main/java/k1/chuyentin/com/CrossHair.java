@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
 public class CrossHair extends BaseActorAnimation {
@@ -14,8 +15,8 @@ public class CrossHair extends BaseActorAnimation {
     float deltaXY = 1;
     float dec = 0.9f; // quán tính giảm dần
 
-    public CrossHair(Texture texture, float x, float y, int cot, int hang, float speed) {
-        super(texture, x, y, cot, hang, speed);
+    public CrossHair(Texture texture, float x, float y, int cot, int hang, float speed, Stage s) {
+        super(texture, x, y, cot, hang, speed, s);
         setOrigin(getWidth()/2, getHeight()/2);
     }
 

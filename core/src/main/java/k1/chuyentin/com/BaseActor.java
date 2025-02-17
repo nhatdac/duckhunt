@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 
 public class BaseActor extends Actor {
@@ -15,10 +16,11 @@ public class BaseActor extends Actor {
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     boolean alive = true;
-    public BaseActor(Texture texture, float x, float y){
+    public BaseActor(Texture texture, float x, float y, Stage s){
         this.textureRegion = new TextureRegion(texture);
         setPosition(x, y);
         setSize(texture.getWidth(), texture.getHeight());
+        s.addActor(this);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public class Dog extends BaseActor {
 
@@ -12,8 +13,8 @@ public class Dog extends BaseActor {
     Animation<TextureRegion> animationCry;
     Animation<TextureRegion> animationSniff;
     Animation<TextureRegion> animationCurrent;
-    public Dog(Texture texture, float x, float y) {
-        super(texture, x, y);
+    public Dog(Texture texture, float x, float y, Stage s) {
+        super(texture, x, y, s);
 
         animationCry = createAnimation("dog/", 0.2f);
         animationSniff = createAnimation("dog/sniff", 0.3f);

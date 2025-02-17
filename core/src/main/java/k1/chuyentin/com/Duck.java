@@ -42,7 +42,7 @@ public class Duck extends BaseActor{
     boolean wasGoingUp = true;
 
     public Duck(Texture texture, float x, float y, Stage s) {
-        super(texture, x, y);
+        super(texture, x, y, s);
         stateTime = 0f;
 
         duckSound = Gdx.audio.newSound(Gdx.files.internal("audio/ducksound.wav"));
@@ -57,8 +57,6 @@ public class Duck extends BaseActor{
         animationType = TILTED;
         setAnimation(animationType);
         setSize(64, 64);
-
-        s.addActor(this);
     }
 
     @Override

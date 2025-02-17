@@ -4,14 +4,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public class BaseActorAnimation extends BaseActor {
     com.badlogic.gdx.graphics.g2d.Animation<TextureRegion> animation;
     float time;
     TextureRegion currentFrame;
 
-    public BaseActorAnimation(Texture texture, float x, float y, int cot, int hang, float speed){
-        super(texture, x, y);
+    public BaseActorAnimation(Texture texture, float x, float y, int cot, int hang, float speed, Stage s){
+        super(texture, x, y, s);
         setSize(texture.getWidth()/cot, texture.getHeight()/hang);
 
         TextureRegion[][] tam = TextureRegion.split(texture, texture.getWidth()/cot, texture.getHeight()/hang);// đưa tất cả vào danh một danh sách ảnh, vì 6 cột 1 hàng nên sẽ có 6 phần tử: 6 x 1

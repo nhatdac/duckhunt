@@ -19,7 +19,6 @@ public class GameScreen implements Screen {
     Master game;
     Texture crossHairImage;
     CrossHair crossHair;
-    Texture roundImage;
     Shot shot;
     BaseActor hitCounter;
     BaseActor scoreCounter;
@@ -32,6 +31,7 @@ public class GameScreen implements Screen {
 
     Stage stage;
     Background background;
+    BaseActor roundActor;
 
     Music sungAudio;
     boolean isTouchedLastFrame = false; // Cờ lưu trạng thái chuột ở khung trước
@@ -44,6 +44,7 @@ public class GameScreen implements Screen {
 
     Music caughtDuckAudio;
     Sound dogCryAudio;
+    Music reloadAudio;
 
     int duckShotX = 333;
 
@@ -57,28 +58,21 @@ public class GameScreen implements Screen {
         crossHairImage = new Texture("crosshair.png");
 
         stage = new Stage();
-        background = new Background(new Texture("background.png"), 0,0);
-        ground = new BaseActor(new Texture("ground.png"), 0, -32);
-        crossHair = new CrossHair(crossHairImage, 0, 0, 1, 1, 0.02f);
+        background = new Background(new Texture("background.png"), 0,0, stage);
+        roundActor = new BaseActor(new Texture("round.png"),0, 0, stage );
+        roundActor.setY(Gdx.graphics.getHeight() - roundActor.getHeight());
+        dog = new Dog(new Texture("dog/dogcaughtduck.png"), 0, 0, stage);
+        ground = new BaseActor(new Texture("ground.png"), 0, -32, stage);
+        crossHair = new CrossHair(crossHairImage, 0, 0, 1, 1, 0.02f, stage);
 
-        dog = new Dog(new Texture("dog/dogcaughtduck.png"), 0, 0);
-        roundImage = new Texture("round.png");
-        shot = new Shot(new Texture("shot.png"), 16, 0);
-        hitCounter = new BaseActor(new Texture("hitcounter.png"), 0, 0);
+        shot = new Shot(new Texture("shot.png"), 16, 0, stage);
+        hitCounter = new BaseActor(new Texture("hitcounter.png"), 0, 0, stage);
         hitCounter.setSize(512+128, 86);
         hitCounter.setPosition(Gdx.graphics.getWidth()/2 - hitCounter.getWidth()/2, 0);
 
-        scoreCounter = new BaseActor(new Texture("scorecounter.png"), 0, 0);
+        scoreCounter = new BaseActor(new Texture("scorecounter.png"), 0, 0, stage);
         scoreCounter.setSize(128, 86);
         scoreCounter.setPosition(Gdx.graphics.getWidth() - scoreCounter.getWidth() - 16, 0);
-
-        stage.addActor(background);
-        stage.addActor(dog);
-        stage.addActor(ground);
-        stage.addActor(crossHair);
-        stage.addActor(shot);
-        stage.addActor(hitCounter);
-        stage.addActor(scoreCounter);
 
         duck = new Duck(new Texture("duck/duckshot.png"), 0, 0, stage);
 
@@ -93,12 +87,23 @@ public class GameScreen implements Screen {
         caughtDuckAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/caughtDuck.wav"));
         dogCryAudio = Gdx.audio.newSound(Gdx.files.internal("audio/dogcry.wav"));
         sungAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/shoot.wav"));
+        reloadAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/reload.wav"));
 
         sungAudio.setOnCompletionListener(new Music.OnCompletionListener() {
             @Override
             public void onCompletion(Music music) {
                 crossHair.setCostumes(crossHairImage, 1, 1, 0.002f);
                 isShooting = false;
+                if(shot.bullets == 0){
+                    reloadAudio.play();
+                }
+            }
+        });
+
+        reloadAudio.setOnCompletionListener(new Music.OnCompletionListener() {
+            @Override
+            public void onCompletion(Music music) {
+                shot = new Shot(new Texture("shot.png"), 16, 0, stage);
             }
         });
 
@@ -147,18 +152,19 @@ public class GameScreen implements Screen {
             dog.setX(duck.getX(), 0);
             dog.addAction(Actions.moveBy(0, 250, 1));
 
-            HitDuckCounter duckCounter = new HitDuckCounter(new Texture("duck.png"), duckShotX, 42);
+            HitDuckCounter duckCounter = new HitDuckCounter(new Texture("duck.png"), duckShotX, 42, stage);
             duckShotX += 32;
-            stage.addActor(duckCounter);
+            score += 100;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
             if (!isTouchedLastFrame && !isShooting && shot.bullets > 0) { // Chỉ xử lý khi phát hiện nhấp mới
                 isShooting = true;
-                sungAudio.play(); // Phát âm thanh hoặc xử lý logic
                 isTouchedLastFrame = true; // Đánh dấu đã xử lý lần nhấp này
                 crossHair.setCostumes(new Texture("explosion.png"), 8, 1, Gdx.graphics.getDeltaTime());
                 shot.bullets--;
+                sungAudio.play(); // Phát âm thanh hoặc xử lý logic
+                vibrationEffect();
                 if(duck.getBounds().contains(crossHair.getX() + crossHair.getWidth()/2, crossHair.getY() + crossHair.getHeight()/2)){
                     duck.justShot();
                 }
@@ -175,7 +181,6 @@ public class GameScreen implements Screen {
         }
 
         game.batch.begin();
-        game.batch.draw(roundImage, 0, Gdx.graphics.getHeight() - roundImage.getHeight());
         game.font.draw(game.batch, "" + round, 220, Gdx.graphics.getHeight() - 20);
         layout.setText(game.font, "" + score);
         game.font.draw(game.batch, layout, Gdx.graphics.getWidth() - 16 - scoreCounter.getWidth()/2 - layout.width/2, 70);
@@ -205,7 +210,31 @@ public class GameScreen implements Screen {
 
     }
 
-    public void collision(){
+    public void vibrationEffect(){
+        scoreCounter.addAction(Actions.repeat(3, Actions.sequence(
+            Actions.moveBy(0, 7, 0.02f),
+            Actions.moveBy(0, -7, 0.02f)
+        )));
+        hitCounter.addAction(Actions.repeat(3, Actions.sequence(
+            Actions.moveBy(0, 7, 0.02f),
+            Actions.moveBy(0, -7, 0.02f)
+        )));
+        shot.addAction(Actions.repeat(3, Actions.sequence(
+            Actions.moveBy(0, 7, 0.02f),
+            Actions.moveBy(0, -7, 0.02f)
+        )));
+        ground.addAction(Actions.repeat(3, Actions.sequence(
+            Actions.moveBy(0, 7, 0.02f),
+            Actions.moveBy(0, -7, 0.02f)
+        )));
+        background.addAction(Actions.repeat(3, Actions.sequence(
+            Actions.moveBy(0, 7, 0.02f),
+            Actions.moveBy(0, -7, 0.02f)
+        )));
+        roundActor.addAction(Actions.repeat(3, Actions.sequence(
+            Actions.moveBy(0, 7, 0.02f),
+            Actions.moveBy(0, -7, 0.02f)
+        )));
     }
 }
 
