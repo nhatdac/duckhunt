@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
@@ -14,10 +15,13 @@ public class CrossHair extends BaseActorAnimation {
     float dy = 0;
     float deltaXY = 1;
     float dec = 0.9f; // quán tính giảm dần
+    boolean isBlast = false;
+    TextureRegion crossHair;
 
     public CrossHair(Texture texture, float x, float y, int cot, int hang, float speed, Stage s) {
         super(texture, x, y, cot, hang, speed, s);
         setOrigin(getWidth()/2, getHeight()/2);
+        crossHair = currentFrame;
     }
 
     @Override
@@ -55,11 +59,17 @@ public class CrossHair extends BaseActorAnimation {
         dx *= dec;
         dy *= dec;
         moveBy(dx, dy);
+
+        if(animation.isAnimationFinished(time)){
+            isBlast = false;
+            currentFrame = crossHair;
+        }
     }
 
     @Override
     public void setCostumes(Texture texture, int cot, int hang, float speed) {
         super.setCostumes(texture, cot, hang, speed);
         setPosition(getX() + getWidth()/2 - texture.getWidth()/(2*cot), getY() + getHeight()/2 - texture.getHeight()/2);
+        isBlast = true;
     }
 }

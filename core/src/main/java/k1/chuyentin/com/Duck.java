@@ -57,6 +57,8 @@ public class Duck extends BaseActor{
         animationType = TILTED;
         setAnimation(animationType);
         setSize(64, 64);
+
+        reset();
     }
 
     @Override

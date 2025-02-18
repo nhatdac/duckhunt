@@ -44,7 +44,7 @@ public class GameScreen implements Screen {
 
     Music caughtDuckAudio;
     Sound dogCryAudio;
-    Music reloadAudio;
+    Sound blastAudio;
 
     int duckShotX = 333;
 
@@ -87,22 +87,12 @@ public class GameScreen implements Screen {
         caughtDuckAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/caughtDuck.wav"));
         dogCryAudio = Gdx.audio.newSound(Gdx.files.internal("audio/dogcry.wav"));
         sungAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/shoot.wav"));
-        reloadAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/reload.wav"));
+        blastAudio = Gdx.audio.newSound(Gdx.files.internal("audio/blast.wav"));
 
         sungAudio.setOnCompletionListener(new Music.OnCompletionListener() {
             @Override
             public void onCompletion(Music music) {
-                crossHair.setCostumes(crossHairImage, 1, 1, 0.002f);
                 isShooting = false;
-                if(shot.bullets == 0){
-                    reloadAudio.play();
-                }
-            }
-        });
-
-        reloadAudio.setOnCompletionListener(new Music.OnCompletionListener() {
-            @Override
-            public void onCompletion(Music music) {
                 shot = new Shot(new Texture("shot.png"), 16, 0, stage);
             }
         });
@@ -111,7 +101,7 @@ public class GameScreen implements Screen {
             @Override
             public void onCompletion(Music music) {
                 dog.addAction(Actions.moveBy(0, -250, 1));
-                duck = new Duck(new Texture("duck/duckshot.png"), 0, 0, stage);
+                duck = new Duck(new Texture("duck/duckshot.png"), 0, MathUtils.random(0, Gdx.graphics.getWidth()), stage);
             }
         });
     }
@@ -147,25 +137,31 @@ public class GameScreen implements Screen {
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
 
-        if(!duck.isAlive() && duck.getY() < 0 && dog.getY() == 0){
+        if(duck != null && !duck.isAlive() && duck.getY() < 0){
             caughtDuckAudio.play();
-            dog.setX(duck.getX(), 0);
+            dog.setPosition(duck.getX(), 0);
             dog.addAction(Actions.moveBy(0, 250, 1));
 
             HitDuckCounter duckCounter = new HitDuckCounter(new Texture("duck.png"), duckShotX, 42, stage);
             duckShotX += 32;
             score += 100;
+            duck = null;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
             if (!isTouchedLastFrame && !isShooting && shot.bullets > 0) { // Chỉ xử lý khi phát hiện nhấp mới
-                isShooting = true;
+
                 isTouchedLastFrame = true; // Đánh dấu đã xử lý lần nhấp này
                 crossHair.setCostumes(new Texture("explosion.png"), 8, 1, Gdx.graphics.getDeltaTime());
                 shot.bullets--;
-                sungAudio.play(); // Phát âm thanh hoặc xử lý logic
+                if(shot.bullets == 0){
+                    sungAudio.play();
+                    isShooting = true;
+                } else {
+                    blastAudio.play();
+                }
                 vibrationEffect();
-                if(duck.getBounds().contains(crossHair.getX() + crossHair.getWidth()/2, crossHair.getY() + crossHair.getHeight()/2)){
+                if(duck != null && duck.getBounds().contains(crossHair.getX() + crossHair.getWidth()/2, crossHair.getY() + crossHair.getHeight()/2)){
                     duck.justShot();
                 }
                 if(dog.getBounds().contains(crossHair.getX() + crossHair.getWidth()/2, crossHair.getY() + crossHair.getHeight()/2)){
@@ -211,29 +207,36 @@ public class GameScreen implements Screen {
     }
 
     public void vibrationEffect(){
-        scoreCounter.addAction(Actions.repeat(3, Actions.sequence(
-            Actions.moveBy(0, 7, 0.02f),
-            Actions.moveBy(0, -7, 0.02f)
+        int count = 3;
+        float amountY = 10;
+        float duration = 0.02f;
+        scoreCounter.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
         )));
-        hitCounter.addAction(Actions.repeat(3, Actions.sequence(
-            Actions.moveBy(0, 7, 0.02f),
-            Actions.moveBy(0, -7, 0.02f)
+        hitCounter.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
         )));
-        shot.addAction(Actions.repeat(3, Actions.sequence(
-            Actions.moveBy(0, 7, 0.02f),
-            Actions.moveBy(0, -7, 0.02f)
+        shot.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
         )));
-        ground.addAction(Actions.repeat(3, Actions.sequence(
-            Actions.moveBy(0, 7, 0.02f),
-            Actions.moveBy(0, -7, 0.02f)
+        ground.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
         )));
-        background.addAction(Actions.repeat(3, Actions.sequence(
-            Actions.moveBy(0, 7, 0.02f),
-            Actions.moveBy(0, -7, 0.02f)
+        background.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
         )));
-        roundActor.addAction(Actions.repeat(3, Actions.sequence(
-            Actions.moveBy(0, 7, 0.02f),
-            Actions.moveBy(0, -7, 0.02f)
+        roundActor.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
+        )));
+        crossHair.addAction(Actions.repeat(count, Actions.sequence(
+            Actions.moveBy(0, amountY, duration),
+            Actions.moveBy(0, -amountY, duration)
         )));
     }
 }
