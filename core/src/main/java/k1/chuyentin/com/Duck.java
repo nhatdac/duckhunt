@@ -22,6 +22,8 @@ public class Duck extends BaseActor{
     static final String NO_ANIMATION = "no_animation";
     String animationType = NO_ANIMATION;
     int justShot = 0;
+    boolean hasFallen = false;
+    boolean flyAway = false;
 
      Animation<TextureRegion> flyStraightAnimation; // Animation bay thẳng
      Animation<TextureRegion> flyTiltedAnimation;   // Animation bay nghiêng
@@ -32,7 +34,6 @@ public class Duck extends BaseActor{
      float gravity = -9.8f; // Trọng lực ban đầu (pixel/s^2)
      float velocityX = 100f; // Vận tốc ban đầu theo trục X (pixel/s)
      float velocityY = 100f; // Vận tốc ban đầu theo trục Y (pixel/s)
-    float timeTrigger = 0;
 
     // Kích thước màn hình
     private final float screenWidth = Gdx.graphics.getWidth();
@@ -53,33 +54,18 @@ public class Duck extends BaseActor{
         // Tạo animation bay đầu 45 độ
         flyTiltedAnimation = createAnimation("duck/fly2/", 0.1f);
 
-        // Đặt animation mặc định là bay thẳng
-        animationType = TILTED;
-        setAnimation(animationType);
-        setSize(64, 64);
-
         reset();
     }
 
     @Override
     public void act(float delta) {
         stateTime += delta;
-        timeTrigger += delta;
 
         setX(getX() + velocityX * delta);
         setY(getY() + velocityY * delta + 0.5f * gravity * delta * delta);
         velocityY += gravity * delta;
 
         if(isAlive()){
-
-//            if(timeTrigger > 2){
-//                timeTrigger = 0;
-//                if(new Random().nextBoolean()){
-//                    velocityY = -velocityY;
-//                    gravity = -gravity;
-//                }
-//            }
-
             boolean isGoingUp = velocityY > 0;
             if (isGoingUp != wasGoingUp) { // Chỉ thay đổi hình khi trạng thái đổi
                 if (isGoingUp) {
@@ -114,9 +100,9 @@ public class Duck extends BaseActor{
             }
         } else {
             animationType = NO_ANIMATION;
-            if(justShot < 60){
+            if(justShot < 15){
                 justShot += 1;
-                if(justShot == 60){
+                if(justShot == 15){
                     textureRegion = new TextureRegion(new Texture(Gdx.files.internal("duck/duckfall.png")));
                     duckDrop.play();
                 }
@@ -134,7 +120,6 @@ public class Duck extends BaseActor{
         }
     }
 
-
     // Đổi animation
     public void setAnimation(String type) {
         if (type.equals(STRAIGHT)) {
@@ -145,11 +130,18 @@ public class Duck extends BaseActor{
         }
     }
 
-    private void reset() {
+    public void reset() {
+        // Đặt animation mặc định là bay thẳng
+        animationType = TILTED;
+        setAnimation(animationType);
+        setSize(64, 64);
+        setAlive(true);
         setPosition(MathUtils.random(0, Gdx.graphics.getWidth()), 50);
         velocityX = MathUtils.random(30, 80);
         velocityY = MathUtils.random(30, 80);
         gravity = -9.8f;
+        flyAway = false;
+        hasFallen = false;
     }
     public void justShot(){
         setAlive(false);

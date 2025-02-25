@@ -45,8 +45,12 @@ public class GameScreen implements Screen {
     Music caughtDuckAudio;
     Sound dogCryAudio;
     Sound blastAudio;
+    Music bgMusic;
+    Music newroundMusic;
 
     int duckShotX = 333;
+
+    Array<HitDuckCounter> hitDuckCounters = new Array<>();
 
     public GameScreen(Master game){
         this.game = game;
@@ -58,12 +62,15 @@ public class GameScreen implements Screen {
         crossHairImage = new Texture("crosshair.png");
 
         stage = new Stage();
-        background = new Background(new Texture("background.png"), 0,0, stage);
+        background = new Background(new Texture("background.png"), 0,50, stage);
+
         roundActor = new BaseActor(new Texture("round.png"),0, 0, stage );
         roundActor.setY(Gdx.graphics.getHeight() - roundActor.getHeight());
         dog = new Dog(new Texture("dog/dogcaughtduck.png"), 0, 0, stage);
         ground = new BaseActor(new Texture("ground.png"), 0, -32, stage);
         crossHair = new CrossHair(crossHairImage, 0, 0, 1, 1, 0.02f, stage);
+
+        duck = new Duck(new Texture("duck/duckshot.png"), 0, 0, stage);
 
         shot = new Shot(new Texture("shot.png"), 16, 0, stage);
         hitCounter = new BaseActor(new Texture("hitcounter.png"), 0, 0, stage);
@@ -73,8 +80,6 @@ public class GameScreen implements Screen {
         scoreCounter = new BaseActor(new Texture("scorecounter.png"), 0, 0, stage);
         scoreCounter.setSize(128, 86);
         scoreCounter.setPosition(Gdx.graphics.getWidth() - scoreCounter.getWidth() - 16, 0);
-
-        duck = new Duck(new Texture("duck/duckshot.png"), 0, 0, stage);
 
         stage.addListener(new InputListener(){
             @Override
@@ -88,6 +93,8 @@ public class GameScreen implements Screen {
         dogCryAudio = Gdx.audio.newSound(Gdx.files.internal("audio/dogcry.wav"));
         sungAudio = Gdx.audio.newMusic(Gdx.files.internal("audio/shoot.wav"));
         blastAudio = Gdx.audio.newSound(Gdx.files.internal("audio/blast.wav"));
+      //  bgMusic = Gdx.audio.newMusic(Gdx.files.internal("audio/bgm.wav"));
+        newroundMusic = Gdx.audio.newMusic(Gdx.files.internal("audio/newround.wav"));
 
         sungAudio.setOnCompletionListener(new Music.OnCompletionListener() {
             @Override
@@ -101,7 +108,22 @@ public class GameScreen implements Screen {
             @Override
             public void onCompletion(Music music) {
                 dog.addAction(Actions.moveBy(0, -250, 1));
-                duck = new Duck(new Texture("duck/duckshot.png"), 0, MathUtils.random(0, Gdx.graphics.getWidth()), stage);
+                HitDuckCounter duckCounter = new HitDuckCounter(new Texture("duck.png"), duckShotX, 42, stage);
+                duckShotX += 32;
+                hitDuckCounters.add(duckCounter);
+                if(HitDuckCounter.total == 3){
+                    newroundMusic.play();
+                } else {
+                    System.out.println(HitDuckCounter.total);
+                    duck.reset();
+                }
+            }
+        });
+
+        newroundMusic.setOnCompletionListener(new Music.OnCompletionListener() {
+            @Override
+            public void onCompletion(Music music) {
+                nextRound();
             }
         });
     }
@@ -112,7 +134,8 @@ public class GameScreen implements Screen {
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.None);
         round = 1;
         score = 0;
-
+     //   bgMusic.play();
+      //  bgMusic.setLooping(true);
     }
     @Override
     public void render(float v) {
@@ -137,15 +160,13 @@ public class GameScreen implements Screen {
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
 
-        if(duck != null && !duck.isAlive() && duck.getY() < 0){
+        if(!duck.hasFallen && !duck.isAlive() && duck.getY() < 0){
             caughtDuckAudio.play();
             dog.setPosition(duck.getX(), 0);
             dog.addAction(Actions.moveBy(0, 250, 1));
 
-            HitDuckCounter duckCounter = new HitDuckCounter(new Texture("duck.png"), duckShotX, 42, stage);
-            duckShotX += 32;
             score += 100;
-            duck = null;
+            duck.hasFallen = true;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
@@ -238,6 +259,21 @@ public class GameScreen implements Screen {
             Actions.moveBy(0, amountY, duration),
             Actions.moveBy(0, -amountY, duration)
         )));
+    }
+
+    private void reset(){
+
+    }
+
+    private void nextRound(){
+        round++;
+        duck.reset();
+        for (HitDuckCounter duckCounter: hitDuckCounters) {
+            duckCounter.remove();
+        }
+        hitDuckCounters.clear();
+        HitDuckCounter.total = 0;
+        duckShotX = 333;
     }
 }
 
